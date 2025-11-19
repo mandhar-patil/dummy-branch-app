@@ -42,12 +42,14 @@ jobs:
       - name: Build Docker image
         run: docker build -t branchloans-api:latest .
 
-      - name: Save Docker image as artifact
+      - name: Save Docker image as tar
+        run: docker save branchloans-api:latest -o branchloans-api.tar
+
+      - name: Upload Docker image artifact
         uses: actions/upload-artifact@v3
         with:
           name: branchloans-api-image
           path: branchloans-api.tar
-        run: docker save branchloans-api:latest -o branchloans-api.tar
 
   push:
     name: Push Docker Image
