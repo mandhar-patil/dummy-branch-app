@@ -1,70 +1,37 @@
-name: Branch Loan API CI/CD
+build:
+  name: Build Docker Image
+  runs-on: ubuntu-latest
+  needs: test
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-# Trigger on push to main and pull requests
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
 
-jobs:
-  test:
-    name: Run Tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
+    - name: Build and tag Docker image
+      run: |
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/branchloans-api:latest .
+        docker tag ${{ secrets.DOCKER_USERNAME }}/branchloans-api:latest ${{ secrets.DOCKER_USERNAME }}/branchloans-api:${GITHUB_SHA}
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+push:
+  name: Push Docker Image
+  runs-on: ubuntu-latest
+  needs: build
+  steps:
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Run tests
-        run: |
-          pip install pytest
-          pytest || exit 1
-
-  build:
-    name: Build Docker Image
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Build Docker Image
-        run: |
-          docker build -t branchloans-api:${GITHUB_SHA} .
-          docker tag branchloans-api:${GITHUB_SHA} ${{ secrets.DOCKER_USERNAME }}/branchloans-api:latest
-
-  push:
-    name: Push Docker Image
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Push Docker Image
-        run: docker push ${{ secrets.DOCKER_USERNAME }}/branchloans-api:latest
+    - name: Push Docker image
+      run: |
+        docker push ${{ secrets.DOCKER_USERNAME }}/branchloans-api:latest
+        docker push ${{ secrets.DOCKER_USERNAME }}/branchloans-api:${GITHUB_SHA}
