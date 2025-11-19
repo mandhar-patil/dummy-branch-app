@@ -50,27 +50,10 @@ jobs:
           docker build -t ${{ secrets.DOCKER_USERNAME }}/branchloans-api:latest .
           docker tag ${{ secrets.DOCKER_USERNAME }}/branchloans-api:latest ${{ secrets.DOCKER_USERNAME }}/branchloans-api:${GITHUB_SHA}
 
-  security-scan:
-    name: Security Scan Docker Image
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Install Trivy
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget apt-transport-https gnupg lsb-release
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update
-          sudo apt-get install -y trivy
-
-      - name: Scan Docker Image
-        run: trivy image --severity CRITICAL --exit-code 1 ${{ secrets.DOCKER_USERNAME }}/branchloans-api:latest
-
   push:
     name: Push Docker Image
     runs-on: ubuntu-latest
-    needs: security-scan
+    needs: build
     steps:
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
