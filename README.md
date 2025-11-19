@@ -2,7 +2,7 @@
 
 Minimal REST API for microloans, built with Flask, SQLAlchemy, Alembic, and PostgreSQL (via Docker Compose).
 
-## Quick start
+ ## Quick start
 
 ```bash
 # 1) Build and start services
